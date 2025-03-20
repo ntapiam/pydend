@@ -1,117 +1,55 @@
+import math
 from fractions import Fraction
 from itertools import product
 
 from vector import Vector
 
 
-class PBT:
+class STree:
     """
-    Represents a Planar Binary Tree (PBT).
-    A planar binary tree is a rooted binary tree with a specific planar embedding.
+    Represents an undecorated Schröder Tree
     """
 
-    def __init__(self, value=None):
+    def __init__(self):
         """
-        Initializes a node in the planar binary tree.
-        :param value: The value of the node (default is None).
+        Initializes a node in the tree.
         """
-        self.value = value
-        self.left = None  # Left child
-        self.right = None  # Right child
+        self.children = None
 
-    def insert_left(self, value=None):
+    def insert_left(self, children=None):
         """
-        Inserts a new node as the left child.
-        :param value: The value of the new left child.
+        Sets the forest represented by `children` as the left-most children of the root
+        If no argument is given then we insert a single leaf
         """
-        if self.left is None:
-            self.left = PBT(value)
+        if self.children is None:
+            self.children = [STree()] if children is None else children
+        elif children is None:
+            self.children = [STree()] + self.children
         else:
-            new_node = PBT(value)
-            new_node.left = self.left
-            self.left = new_node
+            self.children = children + self.children
 
         return self
 
-    def insert_right(self, value=None):
+    def insert_right(self, children=None):
         """
-        Inserts a new node as the right child.
-        :param value: The value of the new right child.
+        Sets the forest represented by `children` as the left-most children of the root
+        If no argument is given then we insert a single leaf
         """
-        if self.right is None:
-            self.right = PBT(value)
+        if self.children is None:
+            self.children = [STree()] if children is None else children
+        elif children is None:
+            self.children += [STree()]
         else:
-            new_node = PBT(value)
-            new_node.right = self.right
-            self.right = new_node
+            self.children += children
 
         return self
-
-    @classmethod
-    def from_string(cls, s):
-        """
-        Parses a PBT from a string of balanced square brackets.
-        For example, "[10[5][3]]" creates a node with value 10,
-        left child 5, and right child 3.
-        :param s: The string representation of the PBT.
-        :return: A PBT object.
-        """
-        if not s or s == "[]":
-            return PBT()
-
-        # Extract the value (before any brackets)
-        value = ""
-        i = 1
-        while i < len(s) and s[i] not in "[]":
-            value += s[i]
-            i += 1
-
-        # Create root node
-        node = PBT(int(value) if value.strip() else None)
-
-        # If we have children to process
-        if i < len(s) and s[i] == "[":
-            # Find matched brackets for left child
-            balance = 1
-            j = i + 1
-            while j < len(s) and balance > 0:
-                if s[j] == "[":
-                    balance += 1
-                elif s[j] == "]":
-                    balance -= 1
-                j += 1
-
-            # Parse left child and insert
-            left_child = cls.from_string(s[i : j - 1])
-            if left_child is not None:
-                node.left = left_child
-
-            # Check for right child
-            if j < len(s) and s[j] == "[":
-                balance = 1
-                k = j + 1
-                while k < len(s) and balance > 0:
-                    if s[k] == "[":
-                        balance += 1
-                    elif s[k] == "]":
-                        balance -= 1
-                    k += 1
-
-                # Parse right child and insert
-                right_child = cls.from_string(s[j : k - 1])
-                if right_child is not None:
-                    node.right = right_child
-
-        return node
 
     def __repr__(self):
         """
         Returns a string representation of the node and its children.
         """
-        left = f"{self.left}" if self.left is not None else ""
-        right = f"{self.right}" if self.right is not None else ""
-        val = self.value if self.value is not None else ""
-        return f"[{val}{left}{right}]"
+        children = [repr(c) for c in self.children] if self.children is not None else []
+        return f"[{''.join(children)}]"
 
     def __hash__(self):
         """
@@ -123,57 +61,113 @@ class PBT:
         return hash(self) == hash(other)
 
     def is_leaf(self):
-        return True if self.left is None and self.right is None else False
+        return self.children is None
 
 
-class Dend(Vector):
-    def __reduce(self):
-        self.data = {k: v for (k, v) in self.items() if v != 0}
+class Tridend(Vector):
+    @staticmethod
+    def unit():
+        return Tridend.to_vec(STree())
 
-    def vee(self, other):
-        output = Dend()
-        for x, y in product(self.items(), other.items()):
-            b1, s1 = x
-            b2, s2 = y
-            s = s1 * s2
-            b = PBT()
-            b.left = b1
-            b.right = b2
-            output += Dend({b: s})
+    def vee(*trees):
+        output = Tridend()
+        for tup in product(*[t.items() for t in trees]):
+            s = math.prod(t[1] for t in tup)
+            b = STree().insert_left([t[0] for t in tup])
+            output += Tridend({b: s})
 
         return output
 
-    def prec(self, other):
+    def prec_sh(self, other):
         if self.is_zero() or other.is_zero():
-            return Dend()
+            return Tridend()
 
-        @Dend.linear_map
+        @Tridend.linear_map
         def prec_basis(b):
             if b.is_leaf():
-                return Dend()
-            left = Dend.to_vec(b.left)
-            right = Dend.to_vec(b.right)
-            return left.vee(right @ other)
+                return Tridend()
+            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
+            right = Tridend.to_vec(b.children[-1])
+            return Tridend.vee(*left, right @ other)
 
         return prec_basis(self)
 
-    def succ(self, other):
+    def prec_qsh(self, other):
         if self.is_zero() or other.is_zero():
-            return Dend()
+            return Tridend()
 
-        @Dend.linear_map
+        @Tridend.linear_map
+        def prec_basis(b):
+            if b.is_leaf():
+                return Tridend()
+            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
+            right = Tridend.to_vec(b.children[-1])
+            return Tridend.vee(*left, right * other)
+
+        return prec_basis(self)
+
+    def succ_sh(self, other):
+        if self.is_zero() or other.is_zero():
+            return Tridend()
+
+        @Tridend.linear_map
         def succ_basis(b):
             if b.is_leaf():
-                return Dend()
-            left = Dend.to_vec(b.left)
-            right = Dend.to_vec(b.right)
-            return (left @ self).vee(right)
+                return Tridend()
+            left = Tridend.to_vec(b.children[0])
+            right = [Tridend.to_vec(bb) for bb in b.children[1:]]
+            return Tridend.vee(left @ self, *right)
 
         return succ_basis(other)
 
-    def __matmul__(self, other):
-        u = Dend.to_vec(PBT())
+    def succ_qsh(self, other):
+        if self.is_zero() or other.is_zero():
+            return Tridend()
+
+        @Tridend.linear_map
+        def succ_basis(b):
+            if b.is_leaf():
+                return Tridend()
+            left = Tridend.to_vec(b.children[0])
+            right = [Tridend.to_vec(bb) for bb in b.children[1:]]
+            return Tridend.vee(left * self, *right)
+
+        return succ_basis(other)
+
+    def dot(self, other):
+        if (
+            self.is_zero()
+            or other.is_zero()
+            or self == Tridend.unit()
+            or other == Tridend.unit()
+        ):
+            return Tridend()
+
+        @Tridend.linear_map
+        def dot_basis(b):
+            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
+            mid1 = Tridend.to_vec(b.children[-1])
+            result = Tridend()
+            for b2, s in other.items():
+                mid2 = Tridend.to_vec(b2.children[0])
+                mid = mid1 * mid2
+                right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
+                result += s * Tridend.vee(*left, mid, *right)
+
+            return result
+
+        return dot_basis(self)
+
+    def __mul__(self, other):
+        u = Tridend.unit()
         s = self - u
         t = other - u
-        result = self + other + self.prec(t) + s.succ(other)
+        result = self + other + self.prec_qsh(t) + s.succ_qsh(other) + self.dot(other)
+        return result if not s.is_zero() and not t.is_zero() else result - u
+
+    def __matmul__(self, other):
+        u = Tridend.unit()
+        s = self - u
+        t = other - u
+        result = self + other + self.prec_sh(t) + s.succ_sh(other)
         return result if not s.is_zero() and not t.is_zero() else result - u
