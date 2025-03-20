@@ -1,0 +1,8 @@
+[project]
+name = "dend"
+version = "0.1.0"
+author = { name = "Nikolas Tapia", email = "tapia@wias-berlin.de" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
