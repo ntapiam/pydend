@@ -2,8 +2,8 @@ from dend import Tridend, STree
 
 u = Tridend.unit()
 
-y = Tridend.vee(*[u]*2)
-w = Tridend.vee(*[u]*3)
+y = Tridend.vee(u, u)
+w = Tridend.vee(u, u, u)
 ly = Tridend.vee(u, y)
 yl = Tridend.vee(y, u)
 

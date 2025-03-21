@@ -41,17 +41,21 @@ class Vector(UserDict):
     def __repr__(self):
         output = ""
         for n, (k, v) in enumerate(self.items()):
+            coef = ""
+            if v != Fraction(1) and v != -Fraction(1):
+                coef += f"{abs(v)}·"
+
             if n == 0:
                 if v >= 0:
-                    output += f"{v}·{k}"
+                    output += f"{coef}{k}"
                 else:
-                    output += f"-{abs(v)}·{k}"
+                    output += f"-{coef}{k}"
 
             else:
                 if v >= 0:
-                    output += f" + {v}·{k}"
+                    output += f" + {coef}{k}"
                 else:
-                    output += f" - {abs(v)}·{k}"
+                    output += f" - {coef}{k}"
 
         return output
 
