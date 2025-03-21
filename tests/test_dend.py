@@ -53,3 +53,35 @@ def test_product():
     expected += Tridend.to_vec(W)
 
     assert x * y == expected
+
+def test_parse():
+    # Test single node
+    assert repr(STree.parse("[]")) == "[]"
+    
+    # Test two children
+    assert repr(STree.parse("[[][]]")) == "[[][]]"
+    assert STree.parse("[[][]]") == STree().insert_left().insert_right()
+    
+    # Test three children
+    assert repr(STree.parse("[[][][]]")) == "[[][][]]"
+    assert STree.parse("[[][][]]") == STree().insert_left().insert_left().insert_right()
+    
+    # Test deeply nested structure
+    nested = "[[[][]][[][]]]"  # Tree with two children, each having two children
+    parsed = STree.parse(nested)
+    manual = STree()
+    manual.insert_left()
+    manual.insert_right()
+    manual.children[0].insert_left()
+    manual.children[0].insert_right()
+    manual.children[1].insert_left()
+    manual.children[1].insert_right()
+    assert repr(parsed) == nested
+    assert parsed == manual
+    
+    # Test error cases
+    try:
+        STree.parse("[")  # Unmatched bracket
+        assert False, "Should raise ValueError for unmatched bracket"
+    except ValueError:
+        pass

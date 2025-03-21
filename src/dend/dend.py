@@ -1,5 +1,4 @@
 import math
-from fractions import Fraction
 from itertools import product
 
 from .vector import Vector
@@ -43,6 +42,44 @@ class STree:
             self.children += children
 
         return self
+
+    @staticmethod
+    def parse(s: str) -> 'STree':
+        """
+        Parses a balanced string of square brackets into a Schröder tree.
+        
+        Examples:
+            "[]" -> leaf node
+            "[[][]]" -> root with two leaf children
+            "[[][][]]" -> root with three leaf children
+        """
+        def parse_rec(s: str, pos: int) -> tuple[STree, int]:
+            if pos >= len(s):
+                raise ValueError("Unexpected end of string")
+            if s[pos] != '[':
+                raise ValueError(f"Expected '[' at position {pos}")
+            
+            tree = STree()
+            pos += 1  # skip '['
+            children = []
+            
+            while pos < len(s) and s[pos] != ']':
+                child, new_pos = parse_rec(s, pos)
+                children.append(child)
+                pos = new_pos
+                
+            if pos >= len(s) or s[pos] != ']':
+                raise ValueError("Unmatched '['")
+                
+            if children:
+                tree.children = children
+                
+            return tree, pos + 1
+        
+        tree, end = parse_rec(s, 0)
+        if end != len(s):
+            raise ValueError("Extra characters after valid tree")
+        return tree
 
     def __repr__(self):
         """
