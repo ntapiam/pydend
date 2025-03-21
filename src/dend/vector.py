@@ -51,20 +51,21 @@ class Vector(UserDict):
         output = ""
         for n, (k, v) in enumerate(self.items()):
             coef = ""
+            s = ' ⊗ '.join(str(b) for b in k) if isinstance(k, tuple) else str(k)
             if v != Fraction(1) and v != -Fraction(1):
                 coef += f"{abs(v)}·"
 
             if n == 0:
                 if v >= 0:
-                    output += f"{coef}{k}"
+                    output += f"{coef}{s}"
                 else:
-                    output += f"-{coef}{k}"
+                    output += f"-{coef}{s}"
 
             else:
                 if v >= 0:
-                    output += f" + {coef}{k}"
+                    output += f" + {coef}{s}"
                 else:
-                    output += f" - {coef}{k}"
+                    output += f" - {coef}{s}"
 
         return output
 
