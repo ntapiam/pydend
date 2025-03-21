@@ -216,6 +216,51 @@ class Tridend(Vector):
 
         return dot_basis(self)
 
+    def coprod_sh(self):
+        @Tridend.linear_map
+        def coprod_basis(b):
+            u = Tridend.unit()
+            if b.is_leaf():
+                return u.outer(u)
+
+            left = Tridend.to_vec(b.children[0])
+            mid = [Tridend.to_vec(bb) for bb in b.children[1:-1]]
+            right = Tridend.to_vec(b.children[-1])
+
+            delta1 = left.coprod_sh()
+            delta2 = right.coprod_sh()
+
+            result = Tridend()
+
+            for (x, y) in product(delta1.items(), delta2.items()):
+                b1, k1 = x
+                b2, k2 = y
+                result += k1 * k2 * (Tridend.to_vec(b1[0]) @ Tridend.to_vec(b2[0])).outer(Tridend.vee(Tridend.to_vec(b1[1]), *mid, Tridend.to_vec(b2[1])))
+
+            return result + self.outer(u)
+
+        return coprod_basis(self)
+
+    def coprod_qsh(self):
+        @Tridend.linear_map
+        def coprod_basis(b):
+            u = Tridend.unit()
+            if b.is_leaf():
+                return u.outer(u)
+
+            deltas = [Tridend.to_vec(bb).coprod_qsh() for bb in b.children]
+
+            result = Tridend()
+
+            for x in product(*[delta.items() for delta in deltas]):
+                k = math.prod(it[1] for it in x)
+                result += k * math.prod(Tridend.to_vec(it[0][0]) for it in x).outer(Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x]))
+
+            return result + self.outer(u)
+
+        return coprod_basis(self)
+
+
     def __mul__(self, other):
         return self.prec_qsh(other) + self.succ_qsh(other) + self.dot(other)
 
