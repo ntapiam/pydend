@@ -101,9 +101,13 @@ def test_coprod_sh():
     result = z.coprod_sh()
     expected = z.outer(u) + u.outer(z) + y.outer(w)
 
+    assert result == expected
+
     z = ly.dot(y)
     result = z.coprod_sh()
     expected = z.outer(u) + u.outer(z)
+
+    assert result == expected
 
 def test_coprod_qsh():
     result = u.coprod_qsh()
@@ -125,7 +129,10 @@ def test_coprod_qsh():
     result = z.coprod_qsh()
     expected = z.outer(u) + u.outer(z) + y.outer(w)
 
+    assert result == expected
+
     z = ly.dot(y)
-    result = z.coprod_sh()
+    result = z.coprod_qsh()
     expected = z.outer(u) + u.outer(z) + y.outer(w)
 
+    assert result == expected
