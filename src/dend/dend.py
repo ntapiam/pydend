@@ -44,38 +44,39 @@ class STree:
         return self
 
     @staticmethod
-    def parse(s: str) -> 'STree':
+    def parse(s: str) -> "STree":
         """
         Parses a balanced string of square brackets into a Schröder tree.
-        
+
         Examples:
             "[]" -> leaf node
             "[[][]]" -> root with two leaf children
             "[[][][]]" -> root with three leaf children
         """
+
         def parse_rec(s: str, pos: int) -> tuple[STree, int]:
             if pos >= len(s):
                 raise ValueError("Unexpected end of string")
-            if s[pos] != '[':
+            if s[pos] != "[":
                 raise ValueError(f"Expected '[' at position {pos}")
-            
+
             tree = STree()
             pos += 1  # skip '['
             children = []
-            
-            while pos < len(s) and s[pos] != ']':
+
+            while pos < len(s) and s[pos] != "]":
                 child, new_pos = parse_rec(s, pos)
                 children.append(child)
                 pos = new_pos
-                
-            if pos >= len(s) or s[pos] != ']':
+
+            if pos >= len(s) or s[pos] != "]":
                 raise ValueError("Unmatched '['")
-                
+
             if children:
                 tree.children = children
-                
+
             return tree, pos + 1
-        
+
         tree, end = parse_rec(s, 0)
         if end != len(s):
             raise ValueError("Extra characters after valid tree")
@@ -121,13 +122,18 @@ class Tridend(Vector):
 
         @Tridend.linear_map
         def prec_basis(b):
-            if b.is_leaf():
+            b1, b2 = b
+            if b1.is_leaf():
                 return Tridend()
-            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
-            right = Tridend.to_vec(b.children[-1])
-            return Tridend.vee(*left, right @ other)
+            if b2.is_leaf():
+                return self
 
-        return prec_basis(self)
+            left = [Tridend.to_vec(bb) for bb in b1.children[:-1]]
+            right = Tridend.to_vec(b1.children[-1])
+            other_b = Tridend.to_vec(b2)
+            return Tridend.vee(*left, right @ other_b)
+
+        return prec_basis(self.outer(other))
 
     def prec_qsh(self, other):
         if self.is_zero() or other.is_zero():
@@ -135,13 +141,18 @@ class Tridend(Vector):
 
         @Tridend.linear_map
         def prec_basis(b):
-            if b.is_leaf():
+            b1, b2 = b
+            if b1.is_leaf():
                 return Tridend()
-            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
-            right = Tridend.to_vec(b.children[-1])
-            return Tridend.vee(*left, right * other)
+            if b2.is_leaf():
+                return self
 
-        return prec_basis(self)
+            left = [Tridend.to_vec(bb) for bb in b1.children[:-1]]
+            right = Tridend.to_vec(b1.children[-1])
+            other_b = Tridend.to_vec(b2)
+            return Tridend.vee(*left, right * other_b)
+
+        return prec_basis(self.outer(other))
 
     def succ_sh(self, other):
         if self.is_zero() or other.is_zero():
@@ -149,13 +160,18 @@ class Tridend(Vector):
 
         @Tridend.linear_map
         def succ_basis(b):
-            if b.is_leaf():
+            b1, b2 = b
+            if b1.is_leaf():
+                return other
+            if b2.is_leaf():
                 return Tridend()
-            left = Tridend.to_vec(b.children[0])
-            right = [Tridend.to_vec(bb) for bb in b.children[1:]]
-            return Tridend.vee(left @ self, *right)
 
-        return succ_basis(other)
+            left = Tridend.to_vec(b2.children[0])
+            right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
+            self_b = Tridend.to_vec(b1)
+            return Tridend.vee(left @ self_b, *right)
+
+        return succ_basis(self.outer(other))
 
     def succ_qsh(self, other):
         if self.is_zero() or other.is_zero():
@@ -163,13 +179,18 @@ class Tridend(Vector):
 
         @Tridend.linear_map
         def succ_basis(b):
-            if b.is_leaf():
+            b1, b2 = b
+            if b1.is_leaf():
+                return other
+            if b2.is_leaf():
                 return Tridend()
-            left = Tridend.to_vec(b.children[0])
-            right = [Tridend.to_vec(bb) for bb in b.children[1:]]
-            return Tridend.vee(left * self, *right)
 
-        return succ_basis(other)
+            left = Tridend.to_vec(b2.children[0])
+            right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
+            self_b = Tridend.to_vec(b1)
+            return Tridend.vee(left * self_b, *right)
+
+        return succ_basis(self.outer(other))
 
     def dot(self, other):
         if (
@@ -196,15 +217,7 @@ class Tridend(Vector):
         return dot_basis(self)
 
     def __mul__(self, other):
-        u = Tridend.unit()
-        s = self - u
-        t = other - u
-        result = self + other + self.prec_qsh(t) + s.succ_qsh(other) + self.dot(other)
-        return result if not s.is_zero() and not t.is_zero() else result - u
+        return self.prec_qsh(other) + self.succ_qsh(other) + self.dot(other)
 
     def __matmul__(self, other):
-        u = Tridend.unit()
-        s = self - u
-        t = other - u
-        result = self + other + self.prec_sh(t) + s.succ_sh(other)
-        return result if not s.is_zero() and not t.is_zero() else result - u
+        return self.prec_sh(other) + self.succ_sh(other)

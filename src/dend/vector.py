@@ -14,6 +14,15 @@ class Vector(UserDict):
     def to_vec(cls, b):
         return cls({b: Fraction(1, 1)})
 
+    def outer(self, other):
+        return self.__class__(
+            {
+                (b1, b2): k1 * k2
+                for (b1, k1) in self.items()
+                for (b2, k2) in other.items()
+            }
+        )
+
     def __reduce(self):
         self.data = {k: v for (k, v) in self.items() if v != 0}
 
