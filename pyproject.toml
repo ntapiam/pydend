@@ -1,7 +1,20 @@
 [project]
 name = "dend"
 version = "0.1.0"
+requires-python = ">=3.9"
 author = { name = "Nikolas Tapia", email = "tapia@wias-berlin.de" }
+description = "A Python package for dendriform symbolic computations."
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["dendriform", "mathematics", "symbolic computations"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Scientific/Engineering :: Mathematics"
+]
 
 [build-system]
 requires = ["hatchling"]
