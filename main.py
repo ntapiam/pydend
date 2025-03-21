@@ -1,4 +1,4 @@
-from dend import Tridend, STree
+from dend import Tridend
 
 u = Tridend.unit()
 
