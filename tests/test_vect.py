@@ -1,6 +1,6 @@
 from fractions import Fraction
 
-from vector import Vector
+from dend.vector import Vector
 
 
 def test_add():

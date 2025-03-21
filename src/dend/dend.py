@@ -2,7 +2,7 @@ import math
 from fractions import Fraction
 from itertools import product
 
-from vector import Vector
+from .vector import Vector
 
 
 class STree:
