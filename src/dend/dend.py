@@ -241,7 +241,7 @@ class Tridend(Vector):
                     matmul, (Tridend.to_vec(it[0][0]) for it in x), Tridend.unit()
                 ).outer(Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x]))
 
-            return result + self.outer(u)
+            return result + Tridend.to_vec(b).outer(u)
 
         return coprod_basis(self)
 
@@ -262,7 +262,7 @@ class Tridend(Vector):
                     Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x])
                 )
 
-            return result + self.outer(u)
+            return result + Tridend.to_vec(b).outer(u)
 
         return coprod_basis(self)
 
