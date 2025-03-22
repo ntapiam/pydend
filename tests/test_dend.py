@@ -1,5 +1,6 @@
-from dend import STree, Tridend
 from fractions import Fraction
+
+from dend import STree, Tridend
 
 u = Tridend.unit()
 y = Tridend.vee(u, u)
@@ -26,6 +27,25 @@ def test_deeply_nested_tree():
     root.children[1].insert_left()
     root.children[1].insert_right()
     assert repr(root) == "[[[][]][[][]]]"
+
+def test_stree_eq():
+    root = STree()
+    root.insert_left().insert_right()
+    root2 = STree()
+    root2.insert_left().insert_right()
+    assert root == root2
+
+    expected = (STree().insert_left().insert_left(), STree().insert_left().insert_right())
+
+    assert (root, root2) == expected
+
+def test_add():
+    x = u.outer(u)
+    z = w.outer(y)
+
+    expected = Tridend({(STree(), STree()): 1, (STree.parse("[[][][]]"), STree.parse("[[][]]")): -1})
+
+    assert x - z == expected
 
 def test_prec_sh():
     result = y.prec_sh(y)
@@ -105,7 +125,7 @@ def test_coprod_sh():
 
     z = ly.dot(y)
     result = z.coprod_sh()
-    expected = z.outer(u) + u.outer(z)
+    expected = z.outer(u) + u.outer(z) + y.outer(w)
 
     assert result == expected
 
