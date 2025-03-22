@@ -84,6 +84,14 @@ class STree:
             raise ValueError("Extra characters after valid tree")
         return tree
 
+    def degree(self):
+        return self.__count_leaves() - 1
+
+    def __count_leaves(self):
+        if self.is_leaf():
+            return 1
+        return sum(t.__count_leaves() for t in self.children)
+
     def __repr__(self):
         """
         Returns a string representation of the node and its children.
