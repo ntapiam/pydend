@@ -258,12 +258,13 @@ class Tridend(Vector):
 
             for x in product(*[delta.items() for delta in deltas]):
                 k = math.prod(it[1] for it in x)
-                result += k * math.prod(Tridend.to_vec(it[0][0]) for it in x).outer(Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x]))
+                result += k * math.prod(Tridend.to_vec(it[0][0]) for it in x).outer(
+                    Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x])
+                )
 
             return result + self.outer(u)
 
         return coprod_basis(self)
-
 
     def __mul__(self, other):
         return self.prec_qsh(other) + self.succ_qsh(other) + self.dot(other)
