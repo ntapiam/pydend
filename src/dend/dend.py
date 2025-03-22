@@ -96,7 +96,13 @@ class STree:
         return hash(str(self))
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        if self.is_leaf() and other.is_leaf():
+            return True
+        if len(self.children) != len(other.children):
+            return False
+        return all(
+            left == right for (left, right) in zip(self.children, other.children)
+        )
 
     def is_leaf(self):
         return self.children is None
