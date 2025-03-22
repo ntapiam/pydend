@@ -70,6 +70,7 @@ class Vector(UserDict):
         return output
 
     def is_zero(self):
+        self._Vector__reduce()
         return True if self.data == {} else False
 
     def __rmul__(self, k):
