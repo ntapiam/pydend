@@ -48,6 +48,8 @@ class Vector(UserDict):
         return self + (-other)
 
     def __repr__(self):
+        if self.is_zero():
+            return "0"
         output = ""
         for n, (k, v) in enumerate(self.items()):
             coef = ""
