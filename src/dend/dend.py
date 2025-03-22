@@ -142,7 +142,7 @@ class Tridend(Vector):
             if b1.is_leaf():
                 return Tridend()
             if b2.is_leaf():
-                return self
+                return Tridend.to_vec(b1)
 
             left = [Tridend.to_vec(bb) for bb in b1.children[:-1]]
             right = Tridend.to_vec(b1.children[-1])
@@ -161,7 +161,7 @@ class Tridend(Vector):
             if b1.is_leaf():
                 return Tridend()
             if b2.is_leaf():
-                return self
+                return Tridend.to_vec(b1)
 
             left = [Tridend.to_vec(bb) for bb in b1.children[:-1]]
             right = Tridend.to_vec(b1.children[-1])
@@ -177,15 +177,15 @@ class Tridend(Vector):
         @Tridend.linear_map
         def succ_basis(b):
             b1, b2 = b
-            if b1.is_leaf():
-                return other
             if b2.is_leaf():
                 return Tridend()
+            if b1.is_leaf():
+                return Tridend.to_vec(b2)
 
             left = Tridend.to_vec(b2.children[0])
             right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
             self_b = Tridend.to_vec(b1)
-            return Tridend.vee(left @ self_b, *right)
+            return Tridend.vee(self_b @ left, *right)
 
         return succ_basis(self.outer(other))
 
@@ -196,41 +196,32 @@ class Tridend(Vector):
         @Tridend.linear_map
         def succ_basis(b):
             b1, b2 = b
-            if b1.is_leaf():
-                return other
             if b2.is_leaf():
                 return Tridend()
+            if b1.is_leaf():
+                return Tridend.to_vec(b2)
 
             left = Tridend.to_vec(b2.children[0])
             right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
             self_b = Tridend.to_vec(b1)
-            return Tridend.vee(left * self_b, *right)
+            return Tridend.vee(self_b * left, *right)
 
         return succ_basis(self.outer(other))
 
     def dot(self, other):
-        if (
-            self.is_zero()
-            or other.is_zero()
-            or self == Tridend.unit()
-            or other == Tridend.unit()
-        ):
-            return Tridend()
-
         @Tridend.linear_map
         def dot_basis(b):
-            left = [Tridend.to_vec(bb) for bb in b.children[:-1]]
-            mid1 = Tridend.to_vec(b.children[-1])
-            result = Tridend()
-            for b2, s in other.items():
-                mid2 = Tridend.to_vec(b2.children[0])
-                mid = mid1 * mid2
-                right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
-                result += s * Tridend.vee(*left, mid, *right)
+            b1, b2 = b
+            if b1.is_leaf() or b2.is_leaf():
+                return Tridend()
+            left = [Tridend.to_vec(bb) for bb in b1.children[:-1]]
+            mid1 = Tridend.to_vec(b1.children[-1])
+            mid2 = Tridend.to_vec(b2.children[0])
+            right = [Tridend.to_vec(bb) for bb in b2.children[1:]]
 
-            return result
+            return Tridend.vee(*left, mid1 * mid2, *right)
 
-        return dot_basis(self)
+        return dot_basis(self.outer(other))
 
     def coprod_sh(self):
         @Tridend.linear_map
@@ -239,14 +230,13 @@ class Tridend(Vector):
             if b.is_leaf():
                 return u.outer(u)
 
-            deltas = [Tridend.to_vec(bb).coprod_qsh() for bb in b.children]
-
+            deltas = [Tridend.to_vec(bb).coprod_sh() for bb in b.children]
             result = Tridend()
 
             for x in product(*[delta.items() for delta in deltas]):
                 k = math.prod(it[1] for it in x)
                 result += k * reduce(
-                    matmul, (Tridend.to_vec(it[0][0]) for it in x), Tridend.unit()
+                    matmul, (Tridend.to_vec(it[0][0]) for it in x)
                 ).outer(Tridend.vee(*[Tridend.to_vec(it[0][1]) for it in x]))
 
             return result + Tridend.to_vec(b).outer(u)
@@ -275,7 +265,15 @@ class Tridend(Vector):
         return coprod_basis(self)
 
     def __mul__(self, other):
+        if self == Tridend.unit():
+            return other
+        if other == Tridend.unit():
+            return self
         return self.prec_qsh(other) + self.succ_qsh(other) + self.dot(other)
 
     def __matmul__(self, other):
+        if self == Tridend.unit():
+            return other
+        if other == Tridend.unit():
+            return self
         return self.prec_sh(other) + self.succ_sh(other)
