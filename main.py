@@ -2,7 +2,7 @@ import sys
 from itertools import product
 from typing import List, Tuple
 
-from dend import STree, Tridend
+from dend import Tridend
 
 u = Tridend.unit()
 
@@ -49,6 +49,7 @@ def sh2(b):
         Tridend.to_vec(y1) @ Tridend.to_vec(y2)
     )
 
+
 @Tridend.linear_map
 def qsh2(b):
     x, y = b
@@ -59,58 +60,64 @@ def qsh2(b):
         Tridend.to_vec(y1) * Tridend.to_vec(y2)
     )
 
+
 if __name__ == "__main__":
-    print(wl)
-    print(y*wl)
+    from tqdm import tqdm
+
     N = 5
     print("Generating all Schröder trees up to degree", N)
     all_trees = gen_trees(N)
     for d, trees in enumerate(all_trees):
-        print(f"degree {d}:") # , ', '.join([str(tree) for tree in trees]))
+        print(f"degree {d}:")  # , ', '.join([str(tree) for tree in trees]))
         print(f"\ttotal = {len(trees)}")
 
-    for left, right in product(all_trees[1:], all_trees[1:]):
-        for s, t in product(left, right):
-            prod = s * t
-            delta_prod = prod.coprod_qsh()
+    flat_trees = [t for level in all_trees[1:] for t in level]
+    # print("Checking bialgebra property for quasi-shuffle...")
+    # for s, t in tqdm(product(flat_trees, flat_trees), total=len(flat_trees) ** 2):
+    #     prod = s * t
+    #     delta_prod = prod.coprod_qsh()
+    #
+    #     delta_s = s.coprod_qsh()
+    #     delta_t = t.coprod_qsh()
+    #     prod_delta = qsh2(delta_s.outer(delta_t))
+    #
+    #     try:
+    #         assert delta_prod == prod_delta
+    #     except AssertionError:
+    #         print(f"*-Bialgebra check failed for\ns = {s}\nt = {t}")
+    #         print("Δs =", delta_s)
+    #         print("Δt =", delta_t)
+    #         print("s * t =", prod)
+    #         for term in prod.keys():
+    #             print("\tu =", term)
+    #             print("\tΔu =", Tridend.to_vec(term).coprod_sh())
+    #         print("Δ(s * t) =", delta_prod)
+    #         print("Δs * Δt =", prod_delta)
+    #         sys.exit(1)
+    #
+    # print("Done!")
+    # print("Checking bialgebra property for shuffle...")
 
-            delta_s = s.coprod_qsh()
-            delta_t = t.coprod_qsh()
-            prod_delta = qsh2(delta_s.outer(delta_t))
+    for s, t in tqdm(product(flat_trees, flat_trees), total=len(flat_trees) ** 2):
+        prod = s @ t
+        delta_prod = prod.coprod_sh()
 
-            try:
-                assert delta_prod == prod_delta
-            except AssertionError:
-                print(f"*-Bialgebra check failed for\ns = {s}\nt = {t}")
-                print("Δs =", delta_s)
-                print("Δt =", delta_t)
-                print("s * t =", prod)
-                for term in prod.keys():
-                    print("\tu =", term)
-                    print("\tΔu =", Tridend.to_vec(term).coprod_sh())
-                print("Δ(s * t) =", delta_prod)
-                print("Δs * Δt =", prod_delta)
-                sys.exit(1)
+        delta_s = s.coprod_sh()
+        delta_t = t.coprod_sh()
+        prod_delta = sh2(delta_s.outer(delta_t))
 
-    for left, right in product(all_trees[1:], all_trees[1:]):
-        for s, t in product(left, right):
-            prod = s @ t
-            delta_prod = prod.coprod_sh()
+        try:
+            assert delta_prod == prod_delta
+        except AssertionError:
+            print(f"ш-Bialgebra check failed for\ns = {s}\nt = {t}")
+            print("Δs =", delta_s)
+            print("Δt =", delta_t)
+            print("s ш t =", prod)
+            for term in prod.keys():
+                print("\tu =", term)
+                print("\tΔu =", Tridend.to_vec(term).coprod_sh())
+            print("Δ(s ш t) =", delta_prod)
+            print("Δs ш Δt =", prod_delta)
+            sys.exit(1)
 
-            delta_s = s.coprod_sh()
-            delta_t = t.coprod_sh()
-            prod_delta = sh2(delta_s.outer(delta_t))
-
-            try:
-                assert delta_prod == prod_delta
-            except AssertionError:
-                print(f"ш-Bialgebra check failed for\ns = {s}\nt = {t}")
-                print("Δs =", delta_s)
-                print("Δt =", delta_t)
-                print("s ш t =", prod)
-                for term in prod.keys():
-                    print("\tu =", term)
-                    print("\tΔu =", Tridend.to_vec(term).coprod_sh())
-                print("Δ(s ш t) =", delta_prod)
-                print("Δs ш Δt =", prod_delta)
-                sys.exit(1)
+    print("Done!")
