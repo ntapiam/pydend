@@ -1,4 +1,5 @@
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from itertools import product
 from typing import List, Tuple
 
@@ -61,6 +62,19 @@ def qsh2(b):
     )
 
 
+def check_bialgebra_property(pair):
+    s, t = pair
+    prod = s @ t
+    delta_prod = prod.coprod_sh()
+
+    delta_s = s.coprod_sh()
+    delta_t = t.coprod_sh()
+    prod_delta = sh2(delta_s.outer(delta_t))
+
+    if delta_prod != prod_delta:
+        return (s, t, delta_s, delta_t, prod, delta_prod, prod_delta)
+
+
 if __name__ == "__main__":
     from tqdm import tqdm
 
@@ -98,17 +112,15 @@ if __name__ == "__main__":
     # print("Done!")
     # print("Checking bialgebra property for shuffle...")
 
-    for s, t in tqdm(product(flat_trees, flat_trees), total=len(flat_trees) ** 2):
-        prod = s @ t
-        delta_prod = prod.coprod_sh()
+    with ProcessPoolExecutor() as executor:
+        pairs = list(product(flat_trees, flat_trees))
+        results = list(
+            tqdm(executor.map(check_bialgebra_property, pairs), total=len(pairs))
+        )
 
-        delta_s = s.coprod_sh()
-        delta_t = t.coprod_sh()
-        prod_delta = sh2(delta_s.outer(delta_t))
-
-        try:
-            assert delta_prod == prod_delta
-        except AssertionError:
+    for result in results:
+        if result is not None:
+            s, t, delta_s, delta_t, prod, delta_prod, prod_delta = result
             print(f"ш-Bialgebra check failed for\ns = {s}\nt = {t}")
             print("Δs =", delta_s)
             print("Δt =", delta_t)
